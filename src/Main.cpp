@@ -1,7 +1,8 @@
-#include <iostream>
+#include <lua.hpp>
 
 int main() {
-    std::cout << "Hello World" << std::endl;
+    lua_State* pL = luaL_newstate();
 
-    return EXIT_SUCCESS;
+    lua_close(pL);
+    return 0;
 }
