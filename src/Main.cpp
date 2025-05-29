@@ -24,22 +24,41 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    std::cout << "Sample: function Lua call C++" << std::endl;
+    std::cout << "Sample: Coroutine" << std::endl;
     {
-        // Register callback function
-        const char luaFuncName[] = "Ultimate";
-        lua_register(pL, luaFuncName, &UltimateFunction);
+        luaL_openlibs(pL);
 
+        lua_State* pCoroutine = lua_newthread(pL);
+
+        lua_getglobal(pCoroutine, "co_routine");
+
+        lua_State* from = nullptr;
         const int nargs = 0;
-        const int nresults = 1;
-        const int msgh = 0;
-        lua_getglobal(pL, "master");
-        if (lua_pcall(pL, nargs, nresults, msgh) != LUA_OK) {
-            std::cerr << lua_tostring(pL, lua_gettop(pL)) << std::endl;
-            lua_close(pL);
-            return EXIT_FAILURE;
+        int nret = 0;
+        int count = 0;
+        while (true) {
+            const int ret = lua_resume(pCoroutine, from, nargs, &nret); // Start or Restart
+            if (ret == LUA_OK) {
+                break;
+            }
+
+            // Error handling
+            if (ret != LUA_YIELD) {
+                std::cerr << lua_tostring(pCoroutine, lua_gettop(pCoroutine)) << std::endl;
+                lua_close(pL);
+                return EXIT_FAILURE;
+            }
+
+            // Coroutine
+            std::cout << "\t" << "count=" << count++ << ", ret=" << nret;
+            for (int i = 0; i < nret; ++i) {
+                std::cout << ", " << lua_tostring(pCoroutine, i + 1);
+            }
+            std::cout << std::endl;
         }
-        std::cout << "\t" << "master=" << lua_tointeger(pL, 1) << std::endl;
+
+        const int num = lua_gettop(pL);
+        lua_pop(pL, num);
     }
 
     lua_close(pL);
